@@ -11,6 +11,7 @@ sudo apt-get install php-zip -y
 sudo apt-get install php-mbstring -y
 sudo apt-get install php-soap -y
 sudo apt-get install php-intl -y
+sudo apt-get install libapache2-mod-php -y
 sudo /etc/init.d/apache2 restart
 
 # Install Moodle
