@@ -19,7 +19,7 @@ sudo /etc/init.d/apache2 restart
 
 # Install Moodle
 curl -L https://download.moodle.org/download.php/direct/stable36/moodle-3.6.2.tgz > moodle.tgz
-sudo tar -xvzf moodle.tgz -C /var/www/html
+sudo tar -xvzf moodle.tgz -C /var/www/html --strip-components=1
 sudo mkdir /var/moodledata
 sudo chown -R www-data /var/moodledata
 sudo chmod -R 777 /var/www/html/moodle
