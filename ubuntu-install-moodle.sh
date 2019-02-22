@@ -1,3 +1,6 @@
+# Remove default apache page
+sudo rm /var/www/html/index.html --force
+
 # Install Moodle pre-reqs
 sudo apt-get update
 sudo apt-get install php -y
