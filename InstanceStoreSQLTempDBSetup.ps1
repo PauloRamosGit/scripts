@@ -1,5 +1,12 @@
-$driveLetter = "t"
-$volume = Get-Volume -FileSystemLabel "SQLTempDBVol"
+param (
+    [string]$driveLetter = "t",
+    [string]$volumeName = "SQLTempDBVol",
+    [string]$poolName = "SQLTempDBPool",
+    [string]$diskName = "SQLTempDBDisk",
+    [Switch]$NoStartSQLServer
+)
+
+$volume = Get-Volume -FileSystemLabel $volumeName
 
 #Check if volume already exists
 if (!$volume)
@@ -12,14 +19,14 @@ if (!$volume)
     if ($physicalDisks -ne $null)
     {
         $storageSubsystem = Get-StorageSubsystem | ? FriendlyName -Like "Windows Storage on*"
-        $storagePool = New-StoragePool –FriendlyName "SQLTempDBPool" -StorageSubSystemFriendlyName $storageSubsystem.FriendlyName -PhysicalDisks $physicaldisks
-        $storagePool = Get-StoragePool -FriendlyName "SQLTempDBPool"
+        $storagePool = New-StoragePool –FriendlyName $poolName -StorageSubSystemFriendlyName $storageSubsystem.FriendlyName -PhysicalDisks $physicaldisks
+        $storagePool = Get-StoragePool -FriendlyName $poolName
 
-        $virtualDisk = New-VirtualDisk –FriendlyName "SQLTempDBDisk" –StoragePoolFriendlyName $storagePool.FriendlyName -UseMaximumSize -ResiliencySettingName Simple
-        $virtualDisk = Get-Disk -FriendlyName "SQLTempDBDisk"
+        $virtualDisk = New-VirtualDisk –FriendlyName $diskName –StoragePoolFriendlyName $storagePool.FriendlyName -UseMaximumSize -ResiliencySettingName Simple
+        $virtualDisk = Get-Disk -FriendlyName $diskName
 
-        $volume = New-Volume -FriendlyName "SQLTempDBVol" -DiskNumber $virtualDisk.DiskNumber -FileSystem NTFS -DriveLetter $driveLetter 
-        $volume = Get-Volume -FileSystemLabel "SQLTempDBVol"
+        $volume = New-Volume -FriendlyName $volumeName -DiskNumber $virtualDisk.DiskNumber -FileSystem NTFS -DriveLetter $driveLetter 
+        $volume = Get-Volume -FileSystemLabel $volumeName
     
         # Assign permissions
         $path = $volume.DriveLetter + ":\"
@@ -32,8 +39,11 @@ if (!$volume)
     }
 }
 
-#  Restart SQL so it can create tempdb on new drive
-#Stop-Service SQLSERVERAGENT
-#Stop-Service MSSQLSERVER
-Start-Service SQLSERVERAGENT
-Start-Service MSSQLSERVER
+if (!$NoStartSQLServer)
+{
+    #  Restart SQL so it can create tempdb on new drive
+    #Stop-Service SQLSERVERAGENT
+    #Stop-Service MSSQLSERVER
+    Start-Service SQLSERVERAGENT
+    Start-Service MSSQLSERVER
+}
