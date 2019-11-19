@@ -3,13 +3,12 @@ param (
     [string]$volumeName = "SQLTempDBVol",
     [string]$poolName = "SQLTempDBPool",
     [string]$diskName = "SQLTempDBDisk",
-    [Switch]$NoStartSQLServer
+    [Switch]$NoStartSQLServer,
+    [Switch]$NoScheduledTask
 )
 
-$volume = Get-Volume -FileSystemLabel $volumeName
-
-#Check if volume already exists
-if (!$volume)
+# Check if path already exists
+if (!(Test-Path ($driveLetter + ":\")))
 {
 
     # Get all possible disks
@@ -46,4 +45,15 @@ if (!$NoStartSQLServer)
     #Stop-Service MSSQLSERVER
     Start-Service SQLSERVERAGENT
     Start-Service MSSQLSERVER
+}
+
+if (!$NoScheduledTask)
+{
+    if (!(Get-ScheduledTask -TaskName "Rebuild TempDBPool"))
+    {
+        $argument = 'C:\Scripts\InstanceStoreSQLTempDBSetup.ps1 -driveLetter '+$driveLetter+' -volumeName '+$volumeName+' -poolName '+$poolName+' -diskName '+$diskName
+        $action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument $argument
+        $trigger =  New-ScheduledTaskTrigger -AtStartup
+        Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "Rebuild TempDBPool" -Description "Rebuild TempDBPool if required" -RunLevel Highest -User System
+    }
 }
