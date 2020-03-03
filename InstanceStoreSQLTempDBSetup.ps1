@@ -18,7 +18,7 @@ if (!(Test-Path ($driveLetter + ":\")))
     if ($physicalDisks -ne $null)
     {
         $storageSubsystem = Get-StorageSubsystem | ? FriendlyName -Like "Windows Storage on*"
-        $storagePool = New-StoragePool –FriendlyName $poolName -StorageSubSystemFriendlyName $storageSubsystem.FriendlyName -PhysicalDisks $physicaldisks
+        $storagePool = New-StoragePool –FriendlyName $poolName -StorageSubSystemFriendlyName $storageSubsystem.FriendlyName -PhysicalDisks $physicaldisks -Interleave 65536
         $storagePool = Get-StoragePool -FriendlyName $poolName
 
         $virtualDisk = New-VirtualDisk –FriendlyName $diskName –StoragePoolFriendlyName $storagePool.FriendlyName -UseMaximumSize -ResiliencySettingName Simple
