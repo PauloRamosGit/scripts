@@ -1,0 +1,9 @@
+<powershell>
+
+    $response = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PauloRamosGit/scripts/master/InstanceStoreSQLTempDBSetup.ps1" -UseBasicParsing
+    if (!(Test-Path "C:\Scripts")) { $path = New-Item -Path "C:\Scripts" -ItemType Directory }
+    Set-Content -Path "C:\Scripts\InstanceStoreSQLTempDBSetup.ps1" -Value $response.Content
+
+    powershell C:\Scripts\InstanceStoreSQLTempDBSetup.ps1 -foldername "SQLDATA" -account "CONTOSO\sqladmin"
+
+</powershell>
