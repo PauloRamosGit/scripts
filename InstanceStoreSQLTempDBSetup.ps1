@@ -1,5 +1,7 @@
 param (
-    [string]$driveLetter = "t",
+    [string]$driveLetter = "T",
+    [string]$foldername = "SQLDATA",
+    [string]$account = ".\Administrators",
     [string]$volumeName = "SQLTempDBVol",
     [string]$poolName = "SQLTempDBPool",
     [string]$diskName = "SQLTempDBDisk",
@@ -18,7 +20,7 @@ if (!(Test-Path ($driveLetter + ":\")))
     if ($physicalDisks -ne $null)
     {
         $storageSubsystem = Get-StorageSubsystem | ? FriendlyName -Like "Windows Storage on*"
-        $storagePool = New-StoragePool –FriendlyName $poolName -StorageSubSystemFriendlyName $storageSubsystem.FriendlyName -PhysicalDisks $physicaldisks -Interleave 65536
+        $storagePool = New-StoragePool –FriendlyName $poolName -StorageSubSystemFriendlyName $storageSubsystem.FriendlyName -PhysicalDisks $physicaldisks
         $storagePool = Get-StoragePool -FriendlyName $poolName
 
         $virtualDisk = New-VirtualDisk –FriendlyName $diskName –StoragePoolFriendlyName $storagePool.FriendlyName -UseMaximumSize -ResiliencySettingName Simple
@@ -27,13 +29,14 @@ if (!(Test-Path ($driveLetter + ":\")))
         $volume = New-Volume -FriendlyName $volumeName -DiskNumber $virtualDisk.DiskNumber -FileSystem NTFS -DriveLetter $driveLetter 
         $volume = Get-Volume -FileSystemLabel $volumeName
     
-        # Assign permissions
+        # Create SQL Data folder
         $path = $volume.DriveLetter + ":\"
-        $dir = Get-Item -LiteralPath $path
+        $dir = New-Item -Path $path -Name $foldername -ItemType "directory"
+
+        # Assign permissions
         $acl = $dir.GetAccessControl()
-        $ace = "Everyone","FullControl","Allow"
-        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule $ace
-        $acl.SetAccessRule($rule)
+        $entry = New-Object System.Security.AccessControl.FileSystemAccessRule("$account", "FullControl", "ContainerInherit, ObjectInherit", "None", "Allow")
+        $acl.AddAccessRule($entry)
         $dir.SetAccessControl($acl)
     }
 }
@@ -51,7 +54,7 @@ if (!$NoScheduledTask)
 {
     if (!(Get-ScheduledTask -TaskName "Rebuild TempDBPool"))
     {
-        $argument = 'C:\Scripts\InstanceStoreSQLTempDBSetup.ps1 -driveLetter '+$driveLetter+' -volumeName '+$volumeName+' -poolName '+$poolName+' -diskName '+$diskName
+        $argument = 'C:\Scripts\InstanceStoreSQLTempDBSetup.ps1 -driveLetter '+$driveLetter+' -foldername '+$foldername+' -account '+$account+' -volumeName '+$volumeName+' -poolName '+$poolName+' -diskName '+$diskName
         $action = New-ScheduledTaskAction -Execute 'Powershell.exe' -Argument $argument
         $trigger =  New-ScheduledTaskTrigger -AtStartup
         Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "Rebuild TempDBPool" -Description "Rebuild TempDBPool if required" -RunLevel Highest -User System
